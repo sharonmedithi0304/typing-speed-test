@@ -10,16 +10,6 @@ A clean and responsive **Typing Speed Test** web application built using **HTML,
 
 ---
 
-## 📸 Preview
-
-> Add a screenshot or GIF here.
-
-```md
-![Typing Speed Test](assets/preview.png)
-```
-
----
-
 ## ✨ Features
 
 * Real-time typing speed calculation (WPM)

@@ -1,0 +1,254 @@
+
+<h2 class="sr-only">Typing Speed Test — measure your words per minute and accuracy</h2>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  #app { padding: 2rem 1rem; max-width: 660px; margin: 0 auto; }
+  #stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 0.85rem 1rem; }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .stat-value { font-size: 26px; font-weight: 500; color: var(--color-text-primary); line-height: 1; }
+  .stat-unit { font-size: 13px; color: var(--color-text-secondary); margin-left: 2px; }
+  #text-display {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem 1.5rem;
+    font-size: 17px;
+    line-height: 1.8;
+    min-height: 110px;
+    margin-bottom: 1rem;
+    word-break: break-word;
+    position: relative;
+    overflow: hidden;
+  }
+  .char { position: relative; }
+  .char.correct { color: var(--color-text-success); }
+  .char.wrong { color: var(--color-text-danger); background: var(--color-background-danger); border-radius: 2px; }
+  .char.cursor::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 2px; height: 100%;
+    background: var(--color-text-info);
+    animation: blink 0.8s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  #input-area {
+    width: 100%;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem 1rem;
+    font-size: 16px;
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background: var(--color-background-primary);
+    outline: none;
+    resize: none;
+    height: 60px;
+    transition: border-color 0.15s;
+  }
+  #input-area:focus { border-color: var(--color-border-primary); box-shadow: 0 0 0 2px rgba(99,99,220,0.1); }
+  #input-area:disabled { opacity: 0.5; cursor: not-allowed; }
+  #controls { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; gap: 12px; }
+  #difficulty-wrap { display: flex; gap: 6px; }
+  .diff-btn {
+    font-size: 13px; padding: 5px 14px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: 99px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .diff-btn.active, .diff-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); border-color: var(--color-border-primary); }
+  #restart-btn {
+    font-size: 14px; padding: 7px 20px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background 0.12s;
+  }
+  #restart-btn:hover { background: var(--color-background-secondary); }
+  #result-banner {
+    display: none;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 1rem;
+  }
+  #result-banner .big { font-size: 40px; font-weight: 500; color: var(--color-text-primary); }
+  #result-banner .sub { font-size: 14px; color: var(--color-text-secondary); margin-top: 6px; }
+  #progress-bar-wrap { height: 3px; background: var(--color-background-secondary); border-radius: 99px; margin-bottom: 1.5rem; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; background: #7F77DD; border-radius: 99px; transition: width 0.2s; }
+</style>
+
+<div id="app">
+  <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+  <div id="stats">
+    <div class="stat">
+      <div class="stat-label">WPM</div>
+      <div class="stat-value" id="wpm-val">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-value" id="acc-val">—<span class="stat-unit">%</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="time-val">60<span class="stat-unit">s</span></div>
+    </div>
+  </div>
+
+  <div id="text-display"></div>
+  <textarea id="input-area" placeholder="Start typing to begin..." spellcheck="false" autocorrect="off" autocapitalize="off"></textarea>
+
+  <div id="controls">
+    <div id="difficulty-wrap">
+      <button class="diff-btn active" data-level="easy">Easy</button>
+      <button class="diff-btn" data-level="medium">Medium</button>
+      <button class="diff-btn" data-level="hard">Hard</button>
+    </div>
+    <button id="restart-btn"><i class="ti ti-refresh" aria-hidden="true"></i> Restart</button>
+  </div>
+
+  <div id="result-banner">
+    <div class="big" id="final-wpm">0 WPM</div>
+    <div class="sub" id="final-acc">Accuracy: 0%</div>
+    <div class="sub" id="final-time" style="margin-top:4px;"></div>
+  </div>
+</div>
+
+<script>
+const pools = {
+  easy: "the quick brown fox jumps over the lazy dog a simple sentence with common words to practice your typing speed and rhythm every day".split(" "),
+  medium: "javascript python programming language function variable object array promise async await import export module component interface".split(" "),
+  hard: "asynchronous concatenation polymorphism encapsulation cryptographic authentication authorization implementation infrastructure configuration".split(" ")
+};
+
+const DURATION = 60;
+let words = [], charIndex = 0, started = false, timer = null, timeLeft = DURATION;
+let totalTyped = 0, correctTyped = 0, level = "easy", finished = false;
+
+function getWords(lvl, n = 40) {
+  const pool = pools[lvl];
+  let arr = [];
+  for (let i = 0; i < n; i++) arr.push(pool[Math.floor(Math.random() * pool.length)]);
+  return arr;
+}
+
+function buildDisplay() {
+  const display = document.getElementById("text-display");
+  display.innerHTML = "";
+  const sentence = words.join(" ");
+  for (let i = 0; i < sentence.length; i++) {
+    const span = document.createElement("span");
+    span.className = "char" + (i === 0 ? " cursor" : "");
+    span.dataset.i = i;
+    span.textContent = sentence[i];
+    display.appendChild(span);
+  }
+}
+
+function updateDisplay(typed) {
+  const sentence = words.join(" ");
+  const chars = document.querySelectorAll(".char");
+  chars.forEach((el, i) => {
+    el.className = "char";
+    if (i < typed.length) {
+      el.classList.add(typed[i] === sentence[i] ? "correct" : "wrong");
+    } else if (i === typed.length) {
+      el.classList.add("cursor");
+    }
+  });
+  const prog = Math.min((typed.length / sentence.length) * 100, 100);
+  document.getElementById("progress-bar").style.width = prog + "%";
+  scrollToCursor();
+}
+
+function scrollToCursor() {
+  const cursor = document.querySelector(".char.cursor");
+  if (cursor) cursor.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function calcWPM(chars, elapsed) {
+  return elapsed > 0 ? Math.round((chars / 5) / (elapsed / 60)) : 0;
+}
+
+function startTimer() {
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById("time-val").innerHTML = timeLeft + '<span class="stat-unit">s</span>';
+    const elapsed = DURATION - timeLeft;
+    const wpm = calcWPM(correctTyped, elapsed);
+    document.getElementById("wpm-val").textContent = wpm;
+    if (timeLeft <= 0) endTest();
+  }, 1000);
+}
+
+function endTest() {
+  clearInterval(timer);
+  finished = true;
+  document.getElementById("input-area").disabled = true;
+  const elapsed = DURATION - timeLeft || 1;
+  const wpm = calcWPM(correctTyped, elapsed);
+  const acc = totalTyped > 0 ? Math.round((correctTyped / totalTyped) * 100) : 0;
+  document.getElementById("final-wpm").textContent = wpm + " WPM";
+  document.getElementById("final-acc").textContent = "Accuracy: " + acc + "%";
+  document.getElementById("final-time").textContent = "Completed in " + elapsed + "s";
+  document.getElementById("result-banner").style.display = "block";
+}
+
+function reset() {
+  clearInterval(timer);
+  started = false; finished = false;
+  timeLeft = DURATION; charIndex = 0;
+  totalTyped = 0; correctTyped = 0;
+  words = getWords(level);
+  buildDisplay();
+  document.getElementById("input-area").value = "";
+  document.getElementById("input-area").disabled = false;
+  document.getElementById("wpm-val").textContent = "0";
+  document.getElementById("acc-val").innerHTML = '—<span class="stat-unit">%</span>';
+  document.getElementById("time-val").innerHTML = DURATION + '<span class="stat-unit">s</span>';
+  document.getElementById("progress-bar").style.width = "0%";
+  document.getElementById("result-banner").style.display = "none";
+  document.getElementById("input-area").focus();
+}
+
+document.getElementById("input-area").addEventListener("input", function() {
+  if (finished) return;
+  const typed = this.value;
+  const sentence = words.join(" ");
+  if (!started && typed.length > 0) { started = true; startTimer(); }
+  totalTyped = typed.length;
+  correctTyped = 0;
+  for (let i = 0; i < typed.length; i++) {
+    if (i < sentence.length && typed[i] === sentence[i]) correctTyped++;
+  }
+  const acc = totalTyped > 0 ? Math.round((correctTyped / totalTyped) * 100) : 0;
+  document.getElementById("acc-val").innerHTML = acc + '<span class="stat-unit">%</span>';
+  updateDisplay(typed);
+  if (typed === sentence) endTest();
+});
+
+document.getElementById("restart-btn").addEventListener("click", reset);
+
+document.querySelectorAll(".diff-btn").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    level = this.dataset.level;
+    reset();
+  });
+});
+
+reset();
+</script>
